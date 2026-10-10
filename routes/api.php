@@ -15,6 +15,10 @@ use App\Http\Controllers\TipoServicioTallerController;
 use App\Http\Controllers\ServicioTallerController;
 use App\Http\Controllers\PersonalController;
 use App\Http\Controllers\VariableController;
+use App\Http\Controllers\IngresoController;
+use App\Http\Controllers\OrdenController;
+use App\Http\Controllers\OrdenRepuestoController;
+use App\Http\Controllers\OrdenServicioTallerController;
 
 // Rutas Públicas (Sin Token)
 Route::post('/login', [AuthController::class, 'login']);
@@ -27,6 +31,10 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'getUser']);
+
+    // Endpoints específicos para Anulación
+    Route::post('/ingresos/{id}/anular', [IngresoController::class, 'anular']);
+    Route::post('/ordenes/{id}/anular', [OrdenController::class, 'anular']);
 
     Route::apiResources([
         // Capa 1
@@ -42,7 +50,13 @@ Route::middleware('auth:sanctum')->group(function () {
         'tipos-servicios-taller' => TipoServicioTallerController::class,
         'servicios-taller' => ServicioTallerController::class,
         'personal' => PersonalController::class,
-        'variables' => VariableController::class
+        'variables' => VariableController::class,
+
+        // Capa 2
+        'ingresos' => IngresoController::class,
+        'ordenes' => OrdenController::class,
+        'ordenes-repuestos' => OrdenRepuestoController::class,
+        'ordenes-servicios-taller' => OrdenServicioTallerController::class,
     ]);
 
     // hacerlo con apiResources es equivalente a las siguientes rutas:  
