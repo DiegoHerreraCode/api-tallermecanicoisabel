@@ -19,6 +19,8 @@ use App\Http\Controllers\IngresoController;
 use App\Http\Controllers\OrdenController;
 use App\Http\Controllers\OrdenRepuestoController;
 use App\Http\Controllers\OrdenServicioTallerController;
+use App\Http\Controllers\HallazgoTecnicoController;
+use App\Http\Controllers\PagoClienteController;
 
 // Rutas Públicas (Sin Token)
 Route::post('/login', [AuthController::class, 'login']);
@@ -57,6 +59,10 @@ Route::middleware('auth:sanctum')->group(function () {
         'ordenes' => OrdenController::class,
         'ordenes-repuestos' => OrdenRepuestoController::class,
         'ordenes-servicios-taller' => OrdenServicioTallerController::class,
+
+        // Capa 3
+        'hallazgos-tecnicos' => HallazgoTecnicoController::class,
+        'pagos-clientes' => PagoClienteController::class,
     ]);
 
     // hacerlo con apiResources es equivalente a las siguientes rutas:  
