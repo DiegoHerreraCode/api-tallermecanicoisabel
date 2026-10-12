@@ -27,12 +27,13 @@ class PresupuestoController extends Controller
     }
 
     /**
-     * Registra un nuevo presupuesto inicial con repuestos y servicios.
+     * Registra un nuevo presupuesto (inicial o extra) con repuestos y servicios.
      */
     public function store(Request $request): JsonResponse
     {
         $request->validate([
-            'id_ingreso' => 'required|exists:ingresos,id_ingreso',
+            'id_ingreso' => 'required_without:id_orden|exists:ingresos,id_ingreso',
+            'id_orden' => 'nullable|exists:ordenes,id_orden',
             'monto_subtotal' => 'required|numeric|min:0',
             'porcentaje_iva' => 'required|numeric|min:0',
             'monto_iva' => 'required|numeric|min:0',
@@ -45,8 +46,8 @@ class PresupuestoController extends Controller
             'repuestos.*.cantidad' => 'required|numeric|min:0',
             'repuestos.*.monto_total_linea' => 'required|numeric|min:0',
 
-            // Arreglo de servicios (obligatorio al menos un servicio)
-            'servicios_taller' => 'required|array|min:1',
+            // Arreglo opcional de servicios (o requerido al menos un ítem total entre repuestos y servicios)
+            'servicios_taller' => 'nullable|array',
             'servicios_taller.*.id_servicio_taller' => 'required|distinct|exists:servicios_taller,id_servicio_taller',
             'servicios_taller.*.precio_unitario' => 'required|numeric|min:0',
             'servicios_taller.*.cantidad' => 'required|numeric|min:0',
@@ -60,7 +61,10 @@ class PresupuestoController extends Controller
             if (!$presupuesto) {
                 return $this->errorResponse('No se pudo crear el presupuesto', 400);
             }
-            return $this->successResponse($presupuesto, 'Presupuesto inicial creado correctamente', 201);
+            $mensaje = $presupuesto->tipo === 'extra'
+                ? 'Presupuesto extra creado correctamente'
+                : 'Presupuesto inicial creado correctamente';
+            return $this->successResponse($presupuesto, $mensaje, 201);
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 422);
         }
@@ -80,23 +84,31 @@ class PresupuestoController extends Controller
     }
 
     /**
-     * Acepta un presupuesto inicial y genera la orden de trabajo.
+     * Acepta un presupuesto (inicial o extra).
      */
     public function aceptar(Request $request, $id): JsonResponse
     {
-        $request->validate([
-            'fecha_fin_tentativa' => 'required|date'
-        ]);
+        $presupuesto = PresupuestoService::getOne($id);
+        if (!$presupuesto) {
+            return $this->errorResponse('Presupuesto no encontrado', 404);
+        }
+
+        // Si es inicial, la fecha de fin tentativa es requerida para armar la orden
+        if ($presupuesto->tipo === 'inicial') {
+            $request->validate([
+                'fecha_fin_tentativa' => 'required|date'
+            ]);
+        }
 
         $data = $request->all();
 
         try {
-            $presupuesto = PresupuestoService::aceptar($id, $data);
-            if (!$presupuesto) {
-                return $this->errorResponse('Presupuesto no encontrado', 404);
-            }
+            $presupuestoActualizado = PresupuestoService::aceptar($id, $data);
+            $mensaje = $presupuesto->tipo === 'extra'
+                ? 'Presupuesto extra aceptado e incorporado a la orden de trabajo correctamente'
+                : 'Presupuesto inicial aceptado y orden de trabajo generada correctamente';
 
-            return $this->successResponse($presupuesto, 'Presupuesto aceptado y orden de trabajo generada correctamente');
+            return $this->successResponse($presupuestoActualizado, $mensaje);
         } catch (Exception $e) {
             return $this->errorResponse($e->getMessage(), 422);
         }

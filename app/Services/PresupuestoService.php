@@ -22,7 +22,8 @@ use Exception;
 /**
  * Service PresupuestoService
  * 
- * Gestiona el ciclo de vida de los presupuestos y su conversión en órdenes de trabajo.
+ * Gestiona el ciclo de vida de los presupuestos (iniciales y extras)
+ * y su sincronización con ingresos y órdenes de trabajo.
  */
 class PresupuestoService
 {
@@ -55,11 +56,23 @@ class PresupuestoService
     }
 
     /**
-     * Registra un nuevo presupuesto inicial.
-     * Solo se permite si el ingreso está en estado 'esperando_orden'.
-     * Al crearse, el ingreso pasa a 'confirmando_presupuesto'.
+     * Registra un nuevo presupuesto (inicial o extra).
+     * Si viene 'id_orden', se crea como presupuesto de tipo 'extra'.
+     * Si no viene 'id_orden', se crea como presupuesto de tipo 'inicial'.
      */
     public static function create($data)
+    {
+        if (!empty($data['id_orden'])) {
+            return self::createExtra($data);
+        }
+
+        return self::createInicial($data);
+    }
+
+    /**
+     * Registra un presupuesto inicial.
+     */
+    public static function createInicial($data)
     {
         $idIngreso = $data['id_ingreso'] ?? null;
         $ingreso = Ingreso::find($idIngreso);
@@ -95,7 +108,7 @@ class PresupuestoService
         $data['estado'] = PresupuestoEstado::PENDIENTE;
         $data['fecha_creacion'] = $now;
         $data['fecha_vencimiento'] = (clone $now)->addDay();
-        $data['num_presupuesto'] = 'PRE-TEMP'; // Temporal para cumplir con not null antes de generar ID
+        $data['num_presupuesto'] = 'PRE-TEMP';
         $data['pdf_presupuesto'] = $data['pdf_presupuesto'] ?? 'pdf-presupuesto-temp';
 
         $presupuesto = Presupuesto::create($data);
@@ -141,11 +154,109 @@ class PresupuestoService
     }
 
     /**
-     * Acepta un presupuesto inicial y genera la orden de trabajo correspondiente.
-     * Vincula el id_orden en el presupuesto, cambia el estado del presupuesto a 'aceptado'
-     * y el estado del ingreso a 'orden_creada'.
+     * Registra un presupuesto de tipo extra asociado a una orden existente.
      */
-    public static function aceptar($id, $data)
+    public static function createExtra($data)
+    {
+        $idOrden = $data['id_orden'];
+        $orden = Orden::find($idOrden);
+
+        if (!$orden) {
+            throw new Exception("La orden de trabajo especificada no existe.");
+        }
+
+        // Validar que la orden esté operativamente activa (no finalizada ni anulada)
+        if ($orden->estado_operativo === OrdenEstadoOperativo::FINALIZADA->value) {
+            throw new Exception("No se pueden emitir presupuestos extras para una orden que ya está finalizada.");
+        }
+
+        if ($orden->estado_operativo === OrdenEstadoOperativo::ANULADA->value) {
+            throw new Exception("No se pueden emitir presupuestos extras para una orden anulada.");
+        }
+
+        // Validar que no exista otro presupuesto extra en estado pendiente para esta misma orden
+        $extraPendiente = Presupuesto::where('id_orden', $idOrden)
+            ->where('tipo', PresupuestoTipo::EXTRA->value)
+            ->where('estado', PresupuestoEstado::PENDIENTE->value)
+            ->first();
+
+        if ($extraPendiente) {
+            throw new Exception("La orden ya tiene un presupuesto extra pendiente de aprobación ({$extraPendiente->num_presupuesto}). Debe resolverse antes de crear uno nuevo.");
+        }
+
+        DB::beginTransaction();
+
+        $array_repuestos = $data['repuestos'] ?? [];
+        $array_servicios_taller = $data['servicios_taller'] ?? [];
+
+        unset($data['repuestos']);
+        unset($data['servicios_taller']);
+
+        if (empty($data['id_admin'])) {
+            $userId = auth()->id();
+            $admin = $userId ? Admin::where('id_user', $userId)->first() : null;
+            $data['id_admin'] = $admin ? $admin->id_admin : 1;
+        }
+
+        // Asignar id_ingreso a partir de la orden
+        $data['id_ingreso'] = $orden->id_ingreso;
+
+        // Buscar el num_presupuesto del presupuesto inicial aceptado que dio origen a esta orden
+        $presupuestoInicial = Presupuesto::where('id_orden', $idOrden)
+            ->where('tipo', PresupuestoTipo::INICIAL->value)
+            ->where('estado', PresupuestoEstado::ACEPTADO->value)
+            ->first();
+
+        $data['num_presupuesto_padre'] = $presupuestoInicial ? $presupuestoInicial->num_presupuesto : null;
+
+        $now = now();
+        $data['tipo'] = PresupuestoTipo::EXTRA;
+        $data['estado'] = PresupuestoEstado::PENDIENTE;
+        $data['fecha_creacion'] = $now;
+        $data['fecha_vencimiento'] = (clone $now)->addDay();
+        $data['num_presupuesto'] = 'PRE-TEMP';
+        $data['pdf_presupuesto'] = $data['pdf_presupuesto'] ?? 'pdf-presupuesto-temp';
+
+        $presupuesto = Presupuesto::create($data);
+
+        // Formatear num_presupuesto con PRE-0000X
+        $formattedNum = 'PRE-' . str_pad($presupuesto->id_presupuesto, 5, '0', STR_PAD_LEFT);
+        $presupuesto->update([
+            'num_presupuesto' => $formattedNum,
+            'pdf_presupuesto' => "pdf-presupuesto-{$presupuesto->id_presupuesto}",
+        ]);
+
+        // Guardar repuestos adicionales
+        foreach ($array_repuestos as $repuesto) {
+            PresupuestoRepuesto::create([
+                'id_presupuesto' => $presupuesto->id_presupuesto,
+                'id_repuesto' => $repuesto['id_repuesto'],
+                'precio_unitario' => $repuesto['precio_unitario'],
+                'cantidad' => $repuesto['cantidad'],
+                'monto_total_linea' => $repuesto['monto_total_linea'],
+            ]);
+        }
+
+        // Guardar servicios adicionales
+        foreach ($array_servicios_taller as $servicioTaller) {
+            PresupuestoServicioTaller::create([
+                'id_presupuesto' => $presupuesto->id_presupuesto,
+                'id_servicio_taller' => $servicioTaller['id_servicio_taller'],
+                'precio_unitario' => $servicioTaller['precio_unitario'],
+                'cantidad' => $servicioTaller['cantidad'],
+                'monto_total_linea' => $servicioTaller['monto_total_linea'],
+            ]);
+        }
+
+        DB::commit();
+
+        return self::getOne($presupuesto->id_presupuesto);
+    }
+
+    /**
+     * Acepta un presupuesto (inicial o extra).
+     */
+    public static function aceptar($id, $data = [])
     {
         $presupuesto = Presupuesto::with(['repuestos', 'serviciosTaller', 'ingreso.vehiculo'])->find($id);
 
@@ -155,6 +266,22 @@ class PresupuestoService
 
         if ($presupuesto->estado !== PresupuestoEstado::PENDIENTE->value) {
             throw new Exception("Solo se pueden aceptar presupuestos en estado 'pendiente'. El estado actual es '{$presupuesto->estado}'.");
+        }
+
+        if ($presupuesto->tipo === PresupuestoTipo::EXTRA->value) {
+            return self::aceptarExtra($presupuesto);
+        }
+
+        return self::aceptarInicial($presupuesto, $data);
+    }
+
+    /**
+     * Procesa la aceptación de un presupuesto inicial (creando la orden).
+     */
+    public static function aceptarInicial($presupuesto, $data)
+    {
+        if (empty($data['fecha_fin_tentativa'])) {
+            throw new Exception("El campo 'fecha_fin_tentativa' es obligatorio para aceptar un presupuesto inicial.");
         }
 
         $ingreso = $presupuesto->ingreso;
@@ -230,8 +357,102 @@ class PresupuestoService
     }
 
     /**
-     * Rechaza un presupuesto inicial.
-     * Pasa el presupuesto a 'rechazado' y el ingreso regresa a 'esperando_orden'.
+     * Procesa la aceptación de un presupuesto extra, incorporando los ítems a la orden existente.
+     */
+    public static function aceptarExtra($presupuesto)
+    {
+        $orden = Orden::find($presupuesto->id_orden);
+        if (!$orden) {
+            throw new Exception("La orden asociada al presupuesto extra no fue encontrada.");
+        }
+
+        if ($orden->estado_operativo === OrdenEstadoOperativo::FINALIZADA->value || $orden->estado_operativo === OrdenEstadoOperativo::ANULADA->value) {
+            throw new Exception("No se puede aceptar el presupuesto extra porque la orden ya está {$orden->estado_operativo}.");
+        }
+
+        DB::beginTransaction();
+
+        // 1. Incorporar repuestos extras a la orden
+        foreach ($presupuesto->repuestos as $itemExtra) {
+            $existente = OrdenRepuesto::where('id_orden', $orden->id_orden)
+                ->where('id_repuesto', $itemExtra->id_repuesto)
+                ->first();
+
+            if ($existente) {
+                $nuevaCantidad = $existente->cantidad + $itemExtra->cantidad;
+                $nuevoTotalLinea = $existente->monto_total_linea + $itemExtra->monto_total_linea;
+                $existente->update([
+                    'cantidad' => $nuevaCantidad,
+                    'monto_total_linea' => $nuevoTotalLinea,
+                ]);
+            } else {
+                OrdenRepuesto::create([
+                    'id_orden' => $orden->id_orden,
+                    'id_repuesto' => $itemExtra->id_repuesto,
+                    'precio_unitario' => $itemExtra->precio_unitario,
+                    'cantidad' => $itemExtra->cantidad,
+                    'monto_total_linea' => $itemExtra->monto_total_linea,
+                ]);
+            }
+        }
+
+        // 2. Incorporar servicios extras a la orden
+        foreach ($presupuesto->serviciosTaller as $itemExtra) {
+            $existente = OrdenServicioTaller::where('id_orden', $orden->id_orden)
+                ->where('id_servicio_taller', $itemExtra->id_servicio_taller)
+                ->first();
+
+            if ($existente) {
+                $nuevaCantidad = $existente->cantidad + $itemExtra->cantidad;
+                $nuevoTotalLinea = $existente->monto_total_linea + $itemExtra->monto_total_linea;
+                // Conserva personal asignado y estado operativo actual
+                $existente->update([
+                    'cantidad' => $nuevaCantidad,
+                    'monto_total_linea' => $nuevoTotalLinea,
+                ]);
+            } else {
+                OrdenServicioTaller::create([
+                    'id_orden' => $orden->id_orden,
+                    'id_servicio_taller' => $itemExtra->id_servicio_taller,
+                    'id_personal' => null,
+                    'precio_unitario' => $itemExtra->precio_unitario,
+                    'cantidad' => $itemExtra->cantidad,
+                    'monto_total_linea' => $itemExtra->monto_total_linea,
+                    'estado' => OrdenServicioTallerEstado::PENDIENTE_ASIGNACION,
+                    'fecha_inicio' => null,
+                    'fecha_fin' => null,
+                ]);
+            }
+        }
+
+        // 3. Recalcular montos económicos de la orden
+        $nuevoSubtotal = $orden->monto_subtotal + $presupuesto->monto_subtotal;
+        $nuevoMontoIva = $orden->monto_iva + $presupuesto->monto_iva;
+        $nuevoTotal = $orden->monto_total + $presupuesto->monto_total;
+        $nuevoPendiente = $orden->monto_pendiente + $presupuesto->monto_total;
+
+        $orden->update([
+            'monto_subtotal' => $nuevoSubtotal,
+            'monto_iva' => $nuevoMontoIva,
+            'monto_total' => $nuevoTotal,
+            'monto_pendiente' => $nuevoPendiente,
+            'last_update' => now(),
+        ]);
+
+        // 4. Marcar presupuesto extra como aceptado
+        $presupuesto->update([
+            'estado' => PresupuestoEstado::ACEPTADO,
+        ]);
+
+        DB::commit();
+
+        return self::getOne($presupuesto->id_presupuesto);
+    }
+
+    /**
+     * Rechaza un presupuesto (inicial o extra).
+     * Si es inicial, el ingreso vuelve a 'esperando_orden'.
+     * Si es extra, ni la orden ni el ingreso se alteran.
      */
     public static function rechazar($id)
     {
@@ -251,7 +472,8 @@ class PresupuestoService
             'estado' => PresupuestoEstado::RECHAZADO,
         ]);
 
-        if ($presupuesto->ingreso) {
+        // Solo si es de tipo inicial el ingreso regresa a esperando_orden
+        if ($presupuesto->tipo === PresupuestoTipo::INICIAL->value && $presupuesto->ingreso) {
             $presupuesto->ingreso->update([
                 'estado' => IngresoEstado::ESPERANDO_ORDEN,
                 'last_update' => now(),
@@ -264,9 +486,9 @@ class PresupuestoService
     }
 
     /**
-     * Anula un presupuesto.
-     * Pasa el presupuesto a 'anulado' con motivo y admin de anulación,
-     * y el ingreso regresa a 'esperando_orden'.
+     * Anula un presupuesto (inicial o extra).
+     * Si es inicial, el ingreso vuelve a 'esperando_orden'.
+     * Si es extra, ni la orden ni el ingreso se alteran.
      */
     public static function anular($id, $motivoAnulacion, $idAdminAnulacion = null)
     {
@@ -289,8 +511,8 @@ class PresupuestoService
             'motivo_anulacion' => $motivoAnulacion,
         ]);
 
-        // Si el ingreso estaba en confirmando_presupuesto por este presupuesto, regresa a esperando_orden
-        if ($presupuesto->ingreso && $presupuesto->ingreso->estado === IngresoEstado::CONFIRMANDO_PRESUPUESTO->value) {
+        // Solo si es de tipo inicial y estaba confirmando_presupuesto, regresa a esperando_orden
+        if ($presupuesto->tipo === PresupuestoTipo::INICIAL->value && $presupuesto->ingreso && $presupuesto->ingreso->estado === IngresoEstado::CONFIRMANDO_PRESUPUESTO->value) {
             $presupuesto->ingreso->update([
                 'estado' => IngresoEstado::ESPERANDO_ORDEN,
                 'last_update' => now(),

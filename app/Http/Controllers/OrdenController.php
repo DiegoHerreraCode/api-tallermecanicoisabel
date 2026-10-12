@@ -188,11 +188,15 @@ class OrdenController extends Controller
         $admin = $userId ? \App\Models\Admin::where('id_user', $userId)->first() : null;
         $idAdmin = $admin ? $admin->id_admin : 1;
 
-        $orden = OrdenService::anular($id, $data['motivo_anulacion'], $idAdmin);
-        if (!$orden) {
-            return $this->errorResponse('Orden no encontrada', 404);
-        }
+        try {
+            $orden = OrdenService::anular($id, $data['motivo_anulacion'], $idAdmin);
+            if (!$orden) {
+                return $this->errorResponse('Orden no encontrada', 404);
+            }
 
-        return $this->successResponse($orden, 'Orden anulada correctamente');
+            return $this->successResponse($orden, 'Orden anulada correctamente');
+        } catch (Exception $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        }
     }
 }

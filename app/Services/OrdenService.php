@@ -7,6 +7,9 @@ use App\Models\OrdenRepuesto;
 use App\Models\OrdenServicioTaller;
 use App\Models\Admin;
 use App\Models\Ingreso;
+use App\Models\Presupuesto;
+use App\Enums\PresupuestoTipo;
+use App\Enums\PresupuestoEstado;
 use App\Enums\OrdenEstadoOperativo;
 use App\Enums\OrdenEstadoAdministrativo;
 use App\Enums\OrdenServicioTallerEstado;
@@ -134,8 +137,27 @@ class OrdenService
             return null;
         }
 
-        // Validación: si se desea marcar la orden como finalizada, todos sus servicios deben estar finalizados
+        // Validar que la orden no tenga un presupuesto extra en estado pendiente
+        $extraPendiente = Presupuesto::where('id_orden', $orden->id_orden)
+            ->where('tipo', PresupuestoTipo::EXTRA->value)
+            ->where('estado', PresupuestoEstado::PENDIENTE->value)
+            ->first();
+
+        if ($extraPendiente) {
+            throw new Exception("No se puede modificar la orden directamente porque tiene el presupuesto extra {$extraPendiente->num_presupuesto} en estado 'pendiente' de aprobación por el cliente.");
+        }
+
+        // Validación: si se desea marcar la orden como finalizada, todos sus servicios deben estar finalizados y no debe tener presupuestos extras pendientes
         if (isset($data['estado_operativo']) && $data['estado_operativo'] === OrdenEstadoOperativo::FINALIZADA->value) {
+            $extraPendienteFinalizar = Presupuesto::where('id_orden', $orden->id_orden)
+                ->where('tipo', PresupuestoTipo::EXTRA->value)
+                ->where('estado', PresupuestoEstado::PENDIENTE->value)
+                ->first();
+
+            if ($extraPendienteFinalizar) {
+                throw new Exception("No se puede marcar la orden como finalizada porque tiene el presupuesto extra {$extraPendienteFinalizar->num_presupuesto} en estado 'pendiente' de aprobación por el cliente.");
+            }
+
             $serviciosNoFinalizados = OrdenServicioTaller::where('id_orden', $orden->id_orden)
                 ->where('estado', '!=', OrdenServicioTallerEstado::FINALIZADO->value)
                 ->count();
@@ -161,6 +183,11 @@ class OrdenService
         unset($data['servicios_taller']);
 
         $data['last_update'] = now();
+
+        if (isset($data['monto_total'])) {
+            $data['monto_pendiente'] = $data['monto_total'];
+        }
+
         $orden->update($data);
 
         // Sincronización de repuestos
@@ -272,6 +299,16 @@ class OrdenService
         $orden = Orden::find($id);
         if (!$orden) {
             return null;
+        }
+
+        // Validar que la orden no tenga un presupuesto extra en estado pendiente
+        $extraPendiente = Presupuesto::where('id_orden', $orden->id_orden)
+            ->where('tipo', PresupuestoTipo::EXTRA->value)
+            ->where('estado', PresupuestoEstado::PENDIENTE->value)
+            ->first();
+
+        if ($extraPendiente) {
+            throw new Exception("No se puede anular la orden porque tiene el presupuesto extra {$extraPendiente->num_presupuesto} en estado 'pendiente' de aprobación por el cliente.");
         }
 
         DB::beginTransaction();
