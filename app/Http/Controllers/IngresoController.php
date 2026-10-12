@@ -182,11 +182,15 @@ class IngresoController extends Controller
 
         $data = $request->all();
 
-        $ingreso = IngresoService::update($id, $data);
-        if (!$ingreso) {
-            return $this->errorResponse('Ingreso no encontrado', 404);
-        }
+        try {
+            $ingreso = IngresoService::update($id, $data);
+            if (!$ingreso) {
+                return $this->errorResponse('Ingreso no encontrado', 404);
+            }
 
-        return $this->successResponse($ingreso, 'Ingreso anulado correctamente');
+            return $this->successResponse($ingreso, 'Ingreso anulado correctamente');
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        }
     }
 }

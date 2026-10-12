@@ -42,6 +42,19 @@ class OrdenService
      */
     public static function create($data)
     {
+        $ingreso = Ingreso::find($data['id_ingreso'] ?? null);
+        if (!$ingreso) {
+            throw new Exception("El ingreso especificado no existe.");
+        }
+
+        if ($ingreso->estado === IngresoEstado::CONFIRMANDO_PRESUPUESTO->value) {
+            throw new Exception("No se puede crear la orden directamente porque el ingreso está en estado 'confirmando_presupuesto'. Primero debe resolverse el presupuesto.");
+        }
+
+        if ($ingreso->estado !== IngresoEstado::ESPERANDO_ORDEN->value) {
+            throw new Exception("Solo se puede crear una orden para ingresos en estado 'esperando_orden'. El estado actual es '{$ingreso->estado}'.");
+        }
+
         DB::beginTransaction();
 
         $array_repuestos = $data['repuestos'] ?? [];

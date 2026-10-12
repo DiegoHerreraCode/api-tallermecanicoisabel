@@ -21,6 +21,9 @@ use App\Http\Controllers\OrdenRepuestoController;
 use App\Http\Controllers\OrdenServicioTallerController;
 use App\Http\Controllers\HallazgoTecnicoController;
 use App\Http\Controllers\PagoClienteController;
+use App\Http\Controllers\PresupuestoController;
+use App\Http\Controllers\PresupuestoRepuestoController;
+use App\Http\Controllers\PresupuestoServicioTallerController;
 
 // Rutas Públicas (Sin Token)
 Route::post('/login', [AuthController::class, 'login']);
@@ -34,9 +37,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'getUser']);
 
-    // Endpoints específicos para Anulación
+    // Endpoints específicos para Anulación y Decisiones
     Route::post('/ingresos/{id}/anular', [IngresoController::class, 'anular']);
     Route::post('/ordenes/{id}/anular', [OrdenController::class, 'anular']);
+
+    // Endpoints específicos para Presupuestos
+    Route::post('/presupuestos/{id}/aceptar', [PresupuestoController::class, 'aceptar']);
+    Route::post('/presupuestos/{id}/rechazar', [PresupuestoController::class, 'rechazar']);
+    Route::post('/presupuestos/{id}/anular', [PresupuestoController::class, 'anular']);
 
     Route::apiResources([
         // Capa 1
@@ -63,6 +71,11 @@ Route::middleware('auth:sanctum')->group(function () {
         // Capa 3
         'hallazgos-tecnicos' => HallazgoTecnicoController::class,
         'pagos-clientes' => PagoClienteController::class,
+
+        // Capa 4
+        'presupuestos' => PresupuestoController::class,
+        'presupuestos-repuestos' => PresupuestoRepuestoController::class,
+        'presupuestos-servicios-taller' => PresupuestoServicioTallerController::class,
     ]);
 
     // hacerlo con apiResources es equivalente a las siguientes rutas:  

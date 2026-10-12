@@ -30,4 +30,19 @@ class Ingreso extends ApiModel
         'id_admin_anulacion',
         'motivo_anulacion'
     ];
+
+    public function vehiculo()
+    {
+        return $this->belongsTo(Vehiculo::class, 'id_vehiculo', 'id_vehiculo');
+    }
+
+    public function tipoOrden()
+    {
+        return $this->belongsTo(TipoOrden::class, 'id_tipo_orden', 'id_tipo_orden');
+    }
+
+    public function presupuestos()
+    {
+        return $this->hasMany(Presupuesto::class, 'id_ingreso', 'id_ingreso');
+    }
 }

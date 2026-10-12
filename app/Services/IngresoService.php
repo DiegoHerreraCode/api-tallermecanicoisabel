@@ -73,6 +73,9 @@ class IngresoService
         }
 
         if (!empty($data['motivo_anulacion'])) {
+            if ($ingreso->estado === IngresoEstado::CONFIRMANDO_PRESUPUESTO->value) {
+                throw new \Exception("No se puede anular el ingreso mientras esté en estado 'confirmando_presupuesto'. Primero debe resolverse el presupuesto.");
+            }
             $data['estado'] = IngresoEstado::ANULADO;
             $data['fecha_anulacion'] = now();
             if (empty($data['id_admin_anulacion'])) {
