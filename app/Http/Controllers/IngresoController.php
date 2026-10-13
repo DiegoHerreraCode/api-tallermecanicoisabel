@@ -113,17 +113,37 @@ class IngresoController extends Controller
             'id_admin' => 'nullable|int|exists:admins,id_admin',
             'observaciones_cliente' => 'nullable|string|max:10000',
             'estado' => 'nullable|in:' . implode(',', IngresoEstado::values()),
-            'pdf_checklist' => 'nullable|string|max:10000',
+            'pdf_checklist' => 'nullable',
             'fecha_anulacion' => 'nullable|date',
             'motivo_anulacion' => 'nullable|string|max:250',
         ]);
 
+        if ($request->hasFile('pdf_checklist')) {
+            $request->validate([
+                'pdf_checklist' => 'file|mimes:pdf|max:10240',
+            ]);
+        }
+
         // Validar que al menos un campo sea modificado
-        if (!$request->has('id_tipo_orden') && !$request->has('id_vehiculo') && !$request->has('id_admin') && !$request->has('observaciones_cliente') && !$request->has('estado') && !$request->has('pdf_checklist') && !$request->has('fecha_anulacion') && !$request->has('motivo_anulacion')) {
+        if (
+            !$request->has('id_tipo_orden') &&
+            !$request->has('id_vehiculo') &&
+            !$request->has('id_admin') &&
+            !$request->has('observaciones_cliente') &&
+            !$request->has('estado') &&
+            !$request->has('pdf_checklist') &&
+            !$request->hasFile('pdf_checklist') &&
+            !$request->has('fecha_anulacion') &&
+            !$request->has('motivo_anulacion')
+        ) {
             return $this->errorResponse('Al menos un campo debe ser modificado', 400);
         }
 
         $data = $request->all();
+
+        if ($request->hasFile('pdf_checklist')) {
+            $data['pdf_checklist'] = $request->file('pdf_checklist');
+        }
 
         $ingreso = IngresoService::update($id, $data);
         if (!$ingreso) {

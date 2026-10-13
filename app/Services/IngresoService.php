@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Ingreso;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\UploadedFile;
 use App\Enums\IngresoEstado;
 use App\Models\Admin;
 /**
@@ -68,7 +70,22 @@ class IngresoService
             return null;
         }
 
-        if (!empty($data['pdf_checklist'])) {
+        // Si se sube un archivo para el checklist
+        if (isset($data['pdf_checklist'])) {
+            if ($data['pdf_checklist'] instanceof UploadedFile) {
+                $file = $data['pdf_checklist'];
+                $nombreArchivo = 'checklist_ingreso_' . $ingreso->id_ingreso . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $path = $file->storeAs('checklists', $nombreArchivo, 'public');
+
+                // Eliminar archivo anterior si existía físicamente
+                if (!empty($ingreso->pdf_checklist) && Storage::disk('public')->exists($ingreso->pdf_checklist)) {
+                    Storage::disk('public')->delete($ingreso->pdf_checklist);
+                }
+
+                $data['pdf_checklist'] = $path;
+            }
+
+            // Al cargar el checklist el estado pasa a esperando_orden
             $data['estado'] = IngresoEstado::ESPERANDO_ORDEN;
         }
 
@@ -105,6 +122,11 @@ class IngresoService
         $ingreso = Ingreso::find($id);
         if (!$ingreso) {
             return null;
+        }
+
+        // Eliminar archivo de checklist si existe
+        if (!empty($ingreso->pdf_checklist) && Storage::disk('public')->exists($ingreso->pdf_checklist)) {
+            Storage::disk('public')->delete($ingreso->pdf_checklist);
         }
 
         DB::beginTransaction();
