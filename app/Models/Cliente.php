@@ -24,5 +24,20 @@ class Cliente extends ApiModel
         'num_tlf',
         'direccion',
     ];
+
+    public function vehiculos()
+    {
+        return $this->hasMany(Vehiculo::class, 'id_cliente', 'id_cliente');
+    }
+
+    public function ordenes()
+    {
+        return $this->hasMany(Orden::class, 'id_cliente', 'id_cliente');
+    }
+
+    public function pagos()
+    {
+        return $this->hasMany(PagoCliente::class, 'id_cliente', 'id_cliente');
+    }
 }
 

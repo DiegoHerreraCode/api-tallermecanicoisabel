@@ -20,4 +20,9 @@ class TipoVehiculo extends ApiModel
     protected $fillable = [
         'nombre',
     ];
+
+    public function vehiculos()
+    {
+        return $this->hasMany(Vehiculo::class, 'id_tipo_vehiculo', 'id_tipo_vehiculo');
+    }
 }

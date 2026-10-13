@@ -61,4 +61,24 @@ class Orden extends ApiModel
     {
         return $this->hasMany(OrdenServicioTaller::class, 'id_orden', 'id_orden');
     }
+
+    public function adminAnulacion()
+    {
+        return $this->belongsTo(Admin::class, 'id_admin_anulacion', 'id_admin');
+    }
+
+    public function presupuestos()
+    {
+        return $this->hasMany(Presupuesto::class, 'id_orden', 'id_orden');
+    }
+
+    public function hallazgosTecnicos()
+    {
+        return $this->hasMany(HallazgoTecnico::class, 'id_orden', 'id_orden');
+    }
+
+    public function pagos()
+    {
+        return $this->hasMany(PagoCliente::class, 'id_orden', 'id_orden');
+    }
 }

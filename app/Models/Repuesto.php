@@ -30,4 +30,14 @@ class Repuesto extends ApiModel
     {
         return $this->belongsTo(MarcaRepuesto::class, 'id_marca_repuesto', 'id_marca_repuesto');
     }
+
+    public function ordenesRepuestos()
+    {
+        return $this->hasMany(OrdenRepuesto::class, 'id_repuesto', 'id_repuesto');
+    }
+
+    public function presupuestosRepuestos()
+    {
+        return $this->hasMany(PresupuestoRepuesto::class, 'id_repuesto', 'id_repuesto');
+    }
 }

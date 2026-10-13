@@ -41,8 +41,23 @@ class Ingreso extends ApiModel
         return $this->belongsTo(TipoOrden::class, 'id_tipo_orden', 'id_tipo_orden');
     }
 
+    public function admin()
+    {
+        return $this->belongsTo(Admin::class, 'id_admin', 'id_admin');
+    }
+
+    public function adminAnulacion()
+    {
+        return $this->belongsTo(Admin::class, 'id_admin_anulacion', 'id_admin');
+    }
+
     public function presupuestos()
     {
         return $this->hasMany(Presupuesto::class, 'id_ingreso', 'id_ingreso');
+    }
+
+    public function ordenes()
+    {
+        return $this->hasMany(Orden::class, 'id_ingreso', 'id_ingreso');
     }
 }

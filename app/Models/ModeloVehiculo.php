@@ -26,4 +26,9 @@ class ModeloVehiculo extends ApiModel
     {
         return $this->belongsTo(MarcaVehiculo::class, 'id_marca_vehiculo', 'id_marca_vehiculo');
     }
+
+    public function vehiculos()
+    {
+        return $this->hasMany(Vehiculo::class, 'id_modelo_vehiculo', 'id_modelo_vehiculo');
+    }
 }

@@ -26,4 +26,9 @@ class Personal extends ApiModel
         'disponible',
         'is_deleted',
     ];
+
+    public function ordenesServiciosTaller()
+    {
+        return $this->hasMany(OrdenServicioTaller::class, 'id_personal', 'id_personal');
+    }
 }

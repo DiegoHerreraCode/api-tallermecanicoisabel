@@ -32,4 +32,14 @@ class ServicioTaller extends ApiModel
     {
         return $this->belongsTo(TipoServicioTaller::class, 'id_tipo_servicio_taller', 'id_tipo_servicio_taller');
     }
+
+    public function ordenesServiciosTaller()
+    {
+        return $this->hasMany(OrdenServicioTaller::class, 'id_servicio_taller', 'id_servicio_taller');
+    }
+
+    public function presupuestosServiciosTaller()
+    {
+        return $this->hasMany(PresupuestoServicioTaller::class, 'id_servicio_taller', 'id_servicio_taller');
+    }
 }

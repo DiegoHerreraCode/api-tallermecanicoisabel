@@ -41,4 +41,29 @@ class Admin extends ApiModel
     {
         return $this->belongsTo(User::class, 'id_user', 'id');
     }
+
+    public function ingresos()
+    {
+        return $this->hasMany(Ingreso::class, 'id_admin', 'id_admin');
+    }
+
+    public function ingresosAnulados()
+    {
+        return $this->hasMany(Ingreso::class, 'id_admin_anulacion', 'id_admin');
+    }
+
+    public function ordenesAnuladas()
+    {
+        return $this->hasMany(Orden::class, 'id_admin_anulacion', 'id_admin');
+    }
+
+    public function presupuestos()
+    {
+        return $this->hasMany(Presupuesto::class, 'id_admin', 'id_admin');
+    }
+
+    public function presupuestosAnulados()
+    {
+        return $this->hasMany(Presupuesto::class, 'id_admin_anulacion', 'id_admin');
+    }
 }

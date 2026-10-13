@@ -22,4 +22,9 @@ class HallazgoTecnico extends ApiModel
         'hallazgo',
         'detalle'
     ];
+
+    public function orden()
+    {
+        return $this->belongsTo(Orden::class, 'id_orden', 'id_orden');
+    }
 }

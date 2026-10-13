@@ -20,4 +20,9 @@ class MarcaRepuesto extends ApiModel
     protected $fillable = [
         'nombre',
     ];
+
+    public function repuestos()
+    {
+        return $this->hasMany(Repuesto::class, 'id_marca_repuesto', 'id_marca_repuesto');
+    }
 }

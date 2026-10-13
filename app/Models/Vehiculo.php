@@ -39,5 +39,10 @@ class Vehiculo extends ApiModel
     {
         return $this->belongsTo(TipoVehiculo::class, 'id_tipo_vehiculo', 'id_tipo_vehiculo');
     }
+
+    public function ingresos()
+    {
+        return $this->hasMany(Ingreso::class, 'id_vehiculo', 'id_vehiculo');
+    }
 }
 

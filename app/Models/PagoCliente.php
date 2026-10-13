@@ -33,4 +33,13 @@ class PagoCliente extends ApiModel
         'imagePath'
     ];
 
+    public function cliente()
+    {
+        return $this->belongsTo(Cliente::class, 'id_cliente', 'id_cliente');
+    }
+
+    public function orden()
+    {
+        return $this->belongsTo(Orden::class, 'id_orden', 'id_orden');
+    }
 }
