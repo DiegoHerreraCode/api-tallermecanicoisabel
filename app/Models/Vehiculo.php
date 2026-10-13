@@ -24,5 +24,20 @@ class Vehiculo extends ApiModel
         'placa',
         'annio',
     ];
+
+    public function cliente()
+    {
+        return $this->belongsTo(Cliente::class, 'id_cliente', 'id_cliente');
+    }
+
+    public function modelo()
+    {
+        return $this->belongsTo(ModeloVehiculo::class, 'id_modelo_vehiculo', 'id_modelo_vehiculo');
+    }
+
+    public function tipoVehiculo()
+    {
+        return $this->belongsTo(TipoVehiculo::class, 'id_tipo_vehiculo', 'id_tipo_vehiculo');
+    }
 }
 

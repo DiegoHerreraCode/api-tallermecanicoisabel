@@ -27,4 +27,9 @@ class ServicioTaller extends ApiModel
         'porcentaje_ganancia',
         'is_deleted'
     ];
+
+    public function tipoServicioTaller()
+    {
+        return $this->belongsTo(TipoServicioTaller::class, 'id_tipo_servicio_taller', 'id_tipo_servicio_taller');
+    }
 }

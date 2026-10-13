@@ -37,6 +37,21 @@ class Orden extends ApiModel
         'motivo_anulacion'
     ];
 
+    public function cliente()
+    {
+        return $this->belongsTo(Cliente::class, 'id_cliente', 'id_cliente');
+    }
+
+    public function tipoOrden()
+    {
+        return $this->belongsTo(TipoOrden::class, 'id_tipo_orden', 'id_tipo_orden');
+    }
+
+    public function ingreso()
+    {
+        return $this->belongsTo(Ingreso::class, 'id_ingreso', 'id_ingreso');
+    }
+
     public function repuestos()
     {
         return $this->hasMany(OrdenRepuesto::class, 'id_orden', 'id_orden');

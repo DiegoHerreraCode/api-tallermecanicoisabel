@@ -25,4 +25,9 @@ class Repuesto extends ApiModel
         'utilidad',
         'porcentaje_ganancia'
     ];
+
+    public function marca()
+    {
+        return $this->belongsTo(MarcaRepuesto::class, 'id_marca_repuesto', 'id_marca_repuesto');
+    }
 }

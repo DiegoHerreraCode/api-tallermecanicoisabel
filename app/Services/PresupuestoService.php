@@ -16,6 +16,7 @@ use App\Enums\IngresoEstado;
 use App\Enums\OrdenEstadoOperativo;
 use App\Enums\OrdenEstadoAdministrativo;
 use App\Enums\OrdenServicioTallerEstado;
+use App\Services\PDFService;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -33,10 +34,14 @@ class PresupuestoService
     public static function getAll()
     {
         return Presupuesto::with([
-            'repuestos.repuesto',
+            'repuestos.repuesto.marca',
             'serviciosTaller.servicioTaller',
-            'ingreso',
-            'orden',
+            'ingreso.vehiculo.cliente',
+            'ingreso.vehiculo.modelo.marca',
+            'ingreso.vehiculo.tipoVehiculo',
+            'ingreso.tipoOrden',
+            'orden.cliente',
+            'orden.tipoOrden',
             'admin'
         ])->get();
     }
@@ -47,10 +52,14 @@ class PresupuestoService
     public static function getOne($id)
     {
         return Presupuesto::with([
-            'repuestos.repuesto',
+            'repuestos.repuesto.marca',
             'serviciosTaller.servicioTaller',
-            'ingreso',
-            'orden',
+            'ingreso.vehiculo.cliente',
+            'ingreso.vehiculo.modelo.marca',
+            'ingreso.vehiculo.tipoVehiculo',
+            'ingreso.tipoOrden',
+            'orden.cliente',
+            'orden.tipoOrden',
             'admin'
         ])->find($id);
     }
@@ -149,6 +158,12 @@ class PresupuestoService
         ]);
 
         DB::commit();
+
+        // Generar automáticamente el PDF del presupuesto y almacenar su ruta
+        $pdfPath = PDFService::generarPresupuestoPDF($presupuesto);
+        if ($pdfPath) {
+            $presupuesto->update(['pdf_presupuesto' => $pdfPath]);
+        }
 
         return self::getOne($presupuesto->id_presupuesto);
     }
@@ -249,6 +264,12 @@ class PresupuestoService
         }
 
         DB::commit();
+
+        // Generar automáticamente el PDF del presupuesto y almacenar su ruta
+        $pdfPath = PDFService::generarPresupuestoPDF($presupuesto);
+        if ($pdfPath) {
+            $presupuesto->update(['pdf_presupuesto' => $pdfPath]);
+        }
 
         return self::getOne($presupuesto->id_presupuesto);
     }
