@@ -29,7 +29,7 @@ class OrdenService
      */
     public static function getAll()
     {
-        return Orden::with(['repuestos.repuesto', 'serviciosTaller.servicioTaller', 'serviciosTaller.personal'])->get();
+        return Orden::with(['repuestos.repuesto', 'serviciosTaller.servicioTaller', 'serviciosTaller.personal', 'tipoOrden'])->get();
     }
 
     /**
@@ -309,6 +309,14 @@ class OrdenService
 
         if ($extraPendiente) {
             throw new Exception("No se puede anular la orden porque tiene el presupuesto extra {$extraPendiente->num_presupuesto} en estado 'pendiente' de aprobación por el cliente.");
+        }
+
+        if ($orden->estado_operativo === OrdenEstadoOperativo::ANULADA->value) {
+            throw new Exception("No se puede anular la orden porque ya tiene el estado '{$orden->estado_operativo}'.");
+        }
+
+        if ($orden->estado_administrativo !== OrdenEstadoAdministrativo::PENDIENTE_PAGO->value) {
+            throw new Exception("No se puede anular la orden porque ya tiene pagos asociados (estado '{$orden->estado_administrativo}').");
         }
 
         DB::beginTransaction();
