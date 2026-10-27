@@ -20,8 +20,11 @@ class OrdenRepuesto extends ApiModel
     protected $fillable = [
         'id_orden',
         'id_repuesto',
+        'costo_unitario_base',
         'precio_unitario',
+        'porcentaje_ganancia',
         'cantidad',
+        'monto_total_linea_base',
         'monto_total_linea'
     ];
 

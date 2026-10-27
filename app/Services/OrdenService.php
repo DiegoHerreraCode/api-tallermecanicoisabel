@@ -85,8 +85,11 @@ class OrdenService
             OrdenRepuesto::create([
                 'id_orden' => $orden->id_orden,
                 'id_repuesto' => $repuesto['id_repuesto'],
+                'costo_unitario_base' => $repuesto['costo_unitario_base'] ?? null,
                 'precio_unitario' => $repuesto['precio_unitario'],
+                'porcentaje_ganancia' => $repuesto['porcentaje_ganancia'] ?? null,
                 'cantidad' => $repuesto['cantidad'],
+                'monto_total_linea_base' => $repuesto['monto_total_linea_base'] ?? null,
                 'monto_total_linea' => $repuesto['monto_total_linea'],
             ]);
         }
@@ -102,8 +105,11 @@ class OrdenService
                 'id_orden' => $orden->id_orden,
                 'id_servicio_taller' => $servicioTaller['id_servicio_taller'],
                 'id_personal' => $idPersonal,
+                'costo_unitario_base' => $servicioTaller['costo_unitario_base'] ?? null,
                 'precio_unitario' => $servicioTaller['precio_unitario'],
+                'porcentaje_ganancia' => $servicioTaller['porcentaje_ganancia'] ?? null,
                 'cantidad' => $servicioTaller['cantidad'],
+                'monto_total_linea_base' => $servicioTaller['monto_total_linea_base'] ?? null,
                 'monto_total_linea' => $servicioTaller['monto_total_linea'],
                 'estado' => $servicioTaller['estado'] ?? $estadoServicio,
                 'fecha_inicio' => $servicioTaller['fecha_inicio'] ?? null,
@@ -203,20 +209,21 @@ class OrdenService
                     ->where('id_repuesto', $repuestoItem['id_repuesto'])
                     ->first();
 
+                $datosRepuesto = [
+                    'costo_unitario_base' => $repuestoItem['costo_unitario_base'] ?? ($existente ? $existente->costo_unitario_base : null),
+                    'precio_unitario' => $repuestoItem['precio_unitario'],
+                    'porcentaje_ganancia' => $repuestoItem['porcentaje_ganancia'] ?? ($existente ? $existente->porcentaje_ganancia : null),
+                    'cantidad' => $repuestoItem['cantidad'],
+                    'monto_total_linea_base' => $repuestoItem['monto_total_linea_base'] ?? ($existente ? $existente->monto_total_linea_base : null),
+                    'monto_total_linea' => $repuestoItem['monto_total_linea'],
+                ];
+
                 if ($existente) {
-                    $existente->update([
-                        'precio_unitario' => $repuestoItem['precio_unitario'],
-                        'cantidad' => $repuestoItem['cantidad'],
-                        'monto_total_linea' => $repuestoItem['monto_total_linea'],
-                    ]);
+                    $existente->update($datosRepuesto);
                 } else {
-                    OrdenRepuesto::create([
-                        'id_orden' => $orden->id_orden,
-                        'id_repuesto' => $repuestoItem['id_repuesto'],
-                        'precio_unitario' => $repuestoItem['precio_unitario'],
-                        'cantidad' => $repuestoItem['cantidad'],
-                        'monto_total_linea' => $repuestoItem['monto_total_linea'],
-                    ]);
+                    $datosRepuesto['id_orden'] = $orden->id_orden;
+                    $datosRepuesto['id_repuesto'] = $repuestoItem['id_repuesto'];
+                    OrdenRepuesto::create($datosRepuesto);
                 }
             }
         }
@@ -255,8 +262,11 @@ class OrdenService
                 $idPersonal = $servicioItem['id_personal'] ?? ($existente ? $existente->id_personal : null);
 
                 $updateData = [
+                    'costo_unitario_base' => $servicioItem['costo_unitario_base'] ?? ($existente ? $existente->costo_unitario_base : null),
                     'precio_unitario' => $servicioItem['precio_unitario'],
+                    'porcentaje_ganancia' => $servicioItem['porcentaje_ganancia'] ?? ($existente ? $existente->porcentaje_ganancia : null),
                     'cantidad' => $servicioItem['cantidad'],
+                    'monto_total_linea_base' => $servicioItem['monto_total_linea_base'] ?? ($existente ? $existente->monto_total_linea_base : null),
                     'monto_total_linea' => $servicioItem['monto_total_linea'],
                     'id_personal' => $idPersonal,
                 ];
