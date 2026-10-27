@@ -42,15 +42,21 @@ class PresupuestoController extends Controller
             // Arreglo opcional de repuestos
             'repuestos' => 'nullable|array',
             'repuestos.*.id_repuesto' => 'required|distinct|exists:repuestos,id_repuesto',
+            'repuestos.*.costo_unitario_base' => 'nullable|numeric|min:0',
             'repuestos.*.precio_unitario' => 'required|numeric|min:0',
+            'repuestos.*.porcentaje_ganancia' => 'nullable|numeric',
             'repuestos.*.cantidad' => 'required|numeric|min:0',
+            'repuestos.*.monto_total_linea_base' => 'nullable|numeric|min:0',
             'repuestos.*.monto_total_linea' => 'required|numeric|min:0',
 
             // Arreglo opcional de servicios (o requerido al menos un ítem total entre repuestos y servicios)
             'servicios_taller' => 'nullable|array',
             'servicios_taller.*.id_servicio_taller' => 'required|distinct|exists:servicios_taller,id_servicio_taller',
+            'servicios_taller.*.costo_unitario_base' => 'nullable|numeric|min:0',
             'servicios_taller.*.precio_unitario' => 'required|numeric|min:0',
+            'servicios_taller.*.porcentaje_ganancia' => 'nullable|numeric',
             'servicios_taller.*.cantidad' => 'required|numeric|min:0',
+            'servicios_taller.*.monto_total_linea_base' => 'nullable|numeric|min:0',
             'servicios_taller.*.monto_total_linea' => 'required|numeric|min:0',
         ]);
 

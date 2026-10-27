@@ -134,8 +134,11 @@ class PresupuestoService
             PresupuestoRepuesto::create([
                 'id_presupuesto' => $presupuesto->id_presupuesto,
                 'id_repuesto' => $repuesto['id_repuesto'],
+                'costo_unitario_base' => $repuesto['costo_unitario_base'] ?? null,
                 'precio_unitario' => $repuesto['precio_unitario'],
+                'porcentaje_ganancia' => $repuesto['porcentaje_ganancia'] ?? null,
                 'cantidad' => $repuesto['cantidad'],
+                'monto_total_linea_base' => $repuesto['monto_total_linea_base'] ?? null,
                 'monto_total_linea' => $repuesto['monto_total_linea'],
             ]);
         }
@@ -145,8 +148,11 @@ class PresupuestoService
             PresupuestoServicioTaller::create([
                 'id_presupuesto' => $presupuesto->id_presupuesto,
                 'id_servicio_taller' => $servicioTaller['id_servicio_taller'],
+                'costo_unitario_base' => $servicioTaller['costo_unitario_base'] ?? null,
                 'precio_unitario' => $servicioTaller['precio_unitario'],
+                'porcentaje_ganancia' => $servicioTaller['porcentaje_ganancia'] ?? null,
                 'cantidad' => $servicioTaller['cantidad'],
+                'monto_total_linea_base' => $servicioTaller['monto_total_linea_base'] ?? null,
                 'monto_total_linea' => $servicioTaller['monto_total_linea'],
             ]);
         }
@@ -246,8 +252,11 @@ class PresupuestoService
             PresupuestoRepuesto::create([
                 'id_presupuesto' => $presupuesto->id_presupuesto,
                 'id_repuesto' => $repuesto['id_repuesto'],
+                'costo_unitario_base' => $repuesto['costo_unitario_base'] ?? null,
                 'precio_unitario' => $repuesto['precio_unitario'],
+                'porcentaje_ganancia' => $repuesto['porcentaje_ganancia'] ?? null,
                 'cantidad' => $repuesto['cantidad'],
+                'monto_total_linea_base' => $repuesto['monto_total_linea_base'] ?? null,
                 'monto_total_linea' => $repuesto['monto_total_linea'],
             ]);
         }
@@ -257,8 +266,11 @@ class PresupuestoService
             PresupuestoServicioTaller::create([
                 'id_presupuesto' => $presupuesto->id_presupuesto,
                 'id_servicio_taller' => $servicioTaller['id_servicio_taller'],
+                'costo_unitario_base' => $servicioTaller['costo_unitario_base'] ?? null,
                 'precio_unitario' => $servicioTaller['precio_unitario'],
+                'porcentaje_ganancia' => $servicioTaller['porcentaje_ganancia'] ?? null,
                 'cantidad' => $servicioTaller['cantidad'],
+                'monto_total_linea_base' => $servicioTaller['monto_total_linea_base'] ?? null,
                 'monto_total_linea' => $servicioTaller['monto_total_linea'],
             ]);
         }
@@ -339,8 +351,11 @@ class PresupuestoService
             OrdenRepuesto::create([
                 'id_orden' => $orden->id_orden,
                 'id_repuesto' => $repuesto->id_repuesto,
+                'costo_unitario_base' => $repuesto->costo_unitario_base,
                 'precio_unitario' => $repuesto->precio_unitario,
+                'porcentaje_ganancia' => $repuesto->porcentaje_ganancia,
                 'cantidad' => $repuesto->cantidad,
+                'monto_total_linea_base' => $repuesto->monto_total_linea_base,
                 'monto_total_linea' => $repuesto->monto_total_linea,
             ]);
         }
@@ -351,8 +366,11 @@ class PresupuestoService
                 'id_orden' => $orden->id_orden,
                 'id_servicio_taller' => $servicioTaller->id_servicio_taller,
                 'id_personal' => null,
+                'costo_unitario_base' => $servicioTaller->costo_unitario_base,
                 'precio_unitario' => $servicioTaller->precio_unitario,
+                'porcentaje_ganancia' => $servicioTaller->porcentaje_ganancia,
                 'cantidad' => $servicioTaller->cantidad,
+                'monto_total_linea_base' => $servicioTaller->monto_total_linea_base,
                 'monto_total_linea' => $servicioTaller->monto_total_linea,
                 'estado' => OrdenServicioTallerEstado::PENDIENTE_ASIGNACION,
                 'fecha_inicio' => null,
@@ -402,16 +420,26 @@ class PresupuestoService
             if ($existente) {
                 $nuevaCantidad = $existente->cantidad + $itemExtra->cantidad;
                 $nuevoTotalLinea = $existente->monto_total_linea + $itemExtra->monto_total_linea;
+                $nuevoTotalLineaBase = ($existente->monto_total_linea_base !== null || $itemExtra->monto_total_linea_base !== null)
+                    ? (($existente->monto_total_linea_base ?? 0) + ($itemExtra->monto_total_linea_base ?? 0))
+                    : null;
+
                 $existente->update([
+                    'costo_unitario_base' => $itemExtra->costo_unitario_base ?? $existente->costo_unitario_base,
+                    'porcentaje_ganancia' => $itemExtra->porcentaje_ganancia ?? $existente->porcentaje_ganancia,
                     'cantidad' => $nuevaCantidad,
+                    'monto_total_linea_base' => $nuevoTotalLineaBase,
                     'monto_total_linea' => $nuevoTotalLinea,
                 ]);
             } else {
                 OrdenRepuesto::create([
                     'id_orden' => $orden->id_orden,
                     'id_repuesto' => $itemExtra->id_repuesto,
+                    'costo_unitario_base' => $itemExtra->costo_unitario_base,
                     'precio_unitario' => $itemExtra->precio_unitario,
+                    'porcentaje_ganancia' => $itemExtra->porcentaje_ganancia,
                     'cantidad' => $itemExtra->cantidad,
+                    'monto_total_linea_base' => $itemExtra->monto_total_linea_base,
                     'monto_total_linea' => $itemExtra->monto_total_linea,
                 ]);
             }
@@ -426,9 +454,16 @@ class PresupuestoService
             if ($existente) {
                 $nuevaCantidad = $existente->cantidad + $itemExtra->cantidad;
                 $nuevoTotalLinea = $existente->monto_total_linea + $itemExtra->monto_total_linea;
+                $nuevoTotalLineaBase = ($existente->monto_total_linea_base !== null || $itemExtra->monto_total_linea_base !== null)
+                    ? (($existente->monto_total_linea_base ?? 0) + ($itemExtra->monto_total_linea_base ?? 0))
+                    : null;
+
                 // Conserva personal asignado y estado operativo actual
                 $existente->update([
+                    'costo_unitario_base' => $itemExtra->costo_unitario_base ?? $existente->costo_unitario_base,
+                    'porcentaje_ganancia' => $itemExtra->porcentaje_ganancia ?? $existente->porcentaje_ganancia,
                     'cantidad' => $nuevaCantidad,
+                    'monto_total_linea_base' => $nuevoTotalLineaBase,
                     'monto_total_linea' => $nuevoTotalLinea,
                 ]);
             } else {
@@ -436,8 +471,11 @@ class PresupuestoService
                     'id_orden' => $orden->id_orden,
                     'id_servicio_taller' => $itemExtra->id_servicio_taller,
                     'id_personal' => null,
+                    'costo_unitario_base' => $itemExtra->costo_unitario_base,
                     'precio_unitario' => $itemExtra->precio_unitario,
+                    'porcentaje_ganancia' => $itemExtra->porcentaje_ganancia,
                     'cantidad' => $itemExtra->cantidad,
+                    'monto_total_linea_base' => $itemExtra->monto_total_linea_base,
                     'monto_total_linea' => $itemExtra->monto_total_linea,
                     'estado' => OrdenServicioTallerEstado::PENDIENTE_ASIGNACION,
                     'fecha_inicio' => null,

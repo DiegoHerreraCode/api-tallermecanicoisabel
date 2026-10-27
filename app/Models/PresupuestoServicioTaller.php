@@ -20,8 +20,11 @@ class PresupuestoServicioTaller extends ApiModel
     protected $fillable = [
         'id_presupuesto',
         'id_servicio_taller',
+        'costo_unitario_base',
         'precio_unitario',
+        'porcentaje_ganancia',
         'cantidad',
+        'monto_total_linea_base',
         'monto_total_linea'
     ];
 

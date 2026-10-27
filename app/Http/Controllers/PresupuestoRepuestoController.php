@@ -38,8 +38,11 @@ class PresupuestoRepuestoController extends Controller
         $request->validate([
             'id_presupuesto' => 'required|exists:presupuestos,id_presupuesto',
             'id_repuesto' => 'required|exists:repuestos,id_repuesto',
+            'costo_unitario_base' => 'nullable|numeric|min:0',
             'precio_unitario' => 'required|numeric|min:0',
+            'porcentaje_ganancia' => 'nullable|numeric',
             'cantidad' => 'required|numeric|min:0',
+            'monto_total_linea_base' => 'nullable|numeric|min:0',
             'monto_total_linea' => 'required|numeric|min:0',
         ]);
 
@@ -71,8 +74,11 @@ class PresupuestoRepuestoController extends Controller
     {
         $request->validate([
             'id_repuesto' => 'nullable|exists:repuestos,id_repuesto',
+            'costo_unitario_base' => 'nullable|numeric|min:0',
             'precio_unitario' => 'nullable|numeric|min:0',
+            'porcentaje_ganancia' => 'nullable|numeric',
             'cantidad' => 'nullable|numeric|min:0',
+            'monto_total_linea_base' => 'nullable|numeric|min:0',
             'monto_total_linea' => 'nullable|numeric|min:0',
         ]);
 
