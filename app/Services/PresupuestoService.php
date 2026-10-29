@@ -601,4 +601,25 @@ class PresupuestoService
 
         return $presupuesto;
     }
+
+    /**
+     * Actualiza automáticamente a 'rechazado' todos los presupuestos con estado 'pendiente'
+     * cuya fecha de vencimiento sea menor o igual al día de hoy.
+     *
+     * @return int Cantidad de presupuestos actualizados.
+     */
+    public static function actualizarPresupuestosVencidos(): int
+    {
+        $hoy = now()->toDateString();
+
+        // Consulta SQL Raw equivalente:
+        // UPDATE "presupuestos" SET "estado" = 'rechazado'
+        // WHERE "estado" = 'pendiente' AND "fecha_vencimiento" <= :hoy;
+        return Presupuesto::where('estado', PresupuestoEstado::PENDIENTE)
+            ->whereNotNull('fecha_vencimiento')
+            ->where('fecha_vencimiento', '<=', $hoy)
+            ->update([
+                'estado' => PresupuestoEstado::RECHAZADO,
+            ]);
+    }
 }

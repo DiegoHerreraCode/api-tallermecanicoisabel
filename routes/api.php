@@ -24,6 +24,7 @@ use App\Http\Controllers\PagoClienteController;
 use App\Http\Controllers\PresupuestoController;
 use App\Http\Controllers\PresupuestoRepuestoController;
 use App\Http\Controllers\PresupuestoServicioTallerController;
+use App\Http\Controllers\CronjobController;
 
 // Rutas Públicas (Sin Token)
 Route::post('/login', [AuthController::class, 'login']);
@@ -31,6 +32,9 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/verify-code', [AuthController::class, 'verifyCode']);
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+
+// Endpoint para el Cron-Job Externo
+Route::get('/cronjob/{token}', [CronjobController::class, 'run']);
 
 // Rutas Protegidas (Requieren Header: Authorization: Bearer <token>)
 Route::middleware('auth:sanctum')->group(function () {
