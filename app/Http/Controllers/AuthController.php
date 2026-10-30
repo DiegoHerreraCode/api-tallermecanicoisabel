@@ -60,18 +60,34 @@ class AuthController extends Controller
 
         $data = $request->all();
 
-        $user = UserService::store($data);
+        DB::beginTransaction();
+        try {
+            $user = UserService::store($data);
 
-        MailerService::enviarCorreo([
-            'to' => [$user->email],
-            'cc' => [],
-            'bcc' => [],
-        ], 'Bienvenido', 'emails.register', ['nombre' => $user->name, 'email' => $user->email, 'password' => $request->password]);
+            $data['id_user'] = $user->id;
+            $data['nombre'] = $user->name;
 
-        $data['id_user'] = $user->id;
-        $data['nombre'] = $user->name;
+            $admin = AdminService::create($data);
 
-        $admin = AdminService::create($data);
+            DB::commit();
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'Error al registrar el administrador: ' . $e->getMessage(),
+            ], 500);
+        }
+
+        // Enviar correo de bienvenida sin bloquear ni romper la transacción
+        try {
+            MailerService::enviarCorreo([
+                'to' => [$user->email],
+                'cc' => [],
+                'bcc' => [],
+            ], 'Bienvenido', 'emails.register', ['nombre' => $user->name, 'email' => $user->email, 'password' => $request->password]);
+        } catch (\Throwable $mailError) {
+            \Illuminate\Support\Facades\Log::warning('No se pudo enviar el correo de bienvenida: ' . $mailError->getMessage());
+        }
 
         return response([
             'message' => 'Usuario registrado exitosamente',
