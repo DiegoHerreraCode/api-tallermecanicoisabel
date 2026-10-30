@@ -104,7 +104,8 @@ class PDFService
             $filename = 'presupuesto_' . ($presupuesto->num_presupuesto ?: $presupuesto->id_presupuesto) . '_' . time() . '.pdf';
             $path = 'presupuestos/' . $filename;
 
-            Storage::disk('public')->put($path, $pdf->output());
+            $disk = config('filesystems.default') === 's3' ? 's3' : 'public';
+            Storage::disk($disk)->put($path, $pdf->output());
 
             return $path;
         } catch (\Throwable $e) {
