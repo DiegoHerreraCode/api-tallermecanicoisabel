@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Services\UserService;
-use App\Services\MailerService;
 use App\Services\AdminService;
+use App\Services\MailerService;
+use App\Services\UserService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 /**
