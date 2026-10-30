@@ -72,10 +72,12 @@ class PDFService
             // Preparar logo en Base64 para máxima compatibilidad con DomPDF
             $logoBase64 = null;
             $posiblesRutasLogo = [
-                storage_path('app/public/' . $empresa['logo_public_path']),
-                storage_path('app/public/images/LOGO_TALLER.png'),
+                public_path($empresa['logo_public_path']),
+                public_path('images/LOGO_TALLER.png'),
                 public_path('storage/' . $empresa['logo_public_path']),
                 public_path('storage/images/LOGO_TALLER.png'),
+                storage_path('app/public/' . $empresa['logo_public_path']),
+                storage_path('app/public/images/LOGO_TALLER.png'),
             ];
 
             foreach ($posiblesRutasLogo as $ruta) {
