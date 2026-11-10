@@ -40,12 +40,12 @@ class IngresoController extends Controller
      * Registra un nuevo ingreso de vehiculo.
      *
      * Lógica:
-     * 1. Valida que el tipo de orden, vehiculo, admin, fecha de ingreso, estado, observaciones del cliente, pdf checklist, last update, fecha de anulacion, admin de anulacion y motivo de anulacion sean una cadena obligatoria de hasta 100 caracteres.
+     * 1. Valida que el tipo de orden, vehiculo, admin, fecha de ingreso, estado, observaciones del cliente, imagen de checklist (image, imagePath), last update, fecha de anulacion, admin de anulacion y motivo de anulacion sean válidos.
      * 2. Llama a IngresoService::create($data) para asignar ID e insertar en la base de datos.
      * 3. Retorna el ingreso creado con código HTTP 201 (Created).
      *
      * Consultas SQL ejecutadas internamente:
-     * -- INSERT INTO "ingresos" ("id_tipo_orden", "id_vehiculo", "id_admin", "fecha_ingreso", "estado", "observaciones_cliente", "pdf_checklist", "last_update", "fecha_anulacion", "id_admin_anulacion", "motivo_anulacion") VALUES (...);
+     * -- INSERT INTO "ingresos" ("id_tipo_orden", "id_vehiculo", "id_admin", "fecha_ingreso", "estado", "observaciones_cliente", "image", "imagePath", "last_update", "fecha_anulacion", "id_admin_anulacion", "motivo_anulacion") VALUES (...);
      *
      * @param Request $request Petición con el campo 'nombre'.
      * @return JsonResponse
@@ -113,16 +113,10 @@ class IngresoController extends Controller
             'id_admin' => 'nullable|int|exists:admins,id_admin',
             'observaciones_cliente' => 'nullable|string|max:10000',
             'estado' => 'nullable|in:' . implode(',', IngresoEstado::values()),
-            'pdf_checklist' => 'nullable',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:10240',
             'fecha_anulacion' => 'nullable|date',
             'motivo_anulacion' => 'nullable|string|max:250',
         ]);
-
-        if ($request->hasFile('pdf_checklist')) {
-            $request->validate([
-                'pdf_checklist' => 'file|mimes:pdf|max:10240',
-            ]);
-        }
 
         // Validar que al menos un campo sea modificado
         if (
@@ -131,8 +125,8 @@ class IngresoController extends Controller
             !$request->has('id_admin') &&
             !$request->has('observaciones_cliente') &&
             !$request->has('estado') &&
-            !$request->has('pdf_checklist') &&
-            !$request->hasFile('pdf_checklist') &&
+            !$request->has('image') &&
+            !$request->hasFile('image') &&
             !$request->has('fecha_anulacion') &&
             !$request->has('motivo_anulacion')
         ) {
@@ -140,10 +134,6 @@ class IngresoController extends Controller
         }
 
         $data = $request->all();
-
-        if ($request->hasFile('pdf_checklist')) {
-            $data['pdf_checklist'] = $request->file('pdf_checklist');
-        }
 
         $ingreso = IngresoService::update($id, $data);
         if (!$ingreso) {

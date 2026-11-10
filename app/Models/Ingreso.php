@@ -11,6 +11,10 @@ use App\Models\ApiModel;
  */
 class Ingreso extends ApiModel
 {
+    const IMAGE_PATH = 'checklists';
+    const IMAGE_FIELD = 'image'; // campo que guarda el nombre original de la imagen del checklist
+    const IMAGE_PATH_FIELD = 'imagePath'; // campo que guarda la ruta relativa de la imagen del checklist
+
     protected $table = 'ingresos';
     protected $primaryKey = 'id_ingreso';
     protected $keyType = 'int';
@@ -24,7 +28,8 @@ class Ingreso extends ApiModel
         'fecha_ingreso',
         'estado',
         'observaciones_cliente',
-        'pdf_checklist',
+        'image',
+        'imagePath',
         'last_update',
         'fecha_anulacion',
         'id_admin_anulacion',

@@ -38,7 +38,7 @@ class IngresoService
     /**
      * Registra un nuevo ingreso de vehiculo.
      * Consulta SQL Raw:
-     * INSERT INTO ingresos (id_tipo_orden, id_vehiculo, id_admin, fecha_ingreso, estado, observaciones_cliente, pdf_checklist, last_update, fecha_anulacion, id_admin_anulacion, motivo_anulacion) VALUES (...);
+     * INSERT INTO ingresos (id_tipo_orden, id_vehiculo, id_admin, fecha_ingreso, estado, observaciones_cliente, image, imagePath, last_update, fecha_anulacion, id_admin_anulacion, motivo_anulacion) VALUES (...);
      */
     public static function create($data)
     {
@@ -70,21 +70,9 @@ class IngresoService
             return null;
         }
 
-        // Si se sube un archivo para el checklist
-        if (isset($data['pdf_checklist'])) {
-            if ($data['pdf_checklist'] instanceof UploadedFile) {
-                $file = $data['pdf_checklist'];
-                $nombreArchivo = 'checklist_ingreso_' . $ingreso->id_ingreso . '_' . time() . '.' . $file->getClientOriginalExtension();
-                $path = $file->storeAs('checklists', $nombreArchivo, 'public');
-
-                // Eliminar archivo anterior si existía físicamente
-                if (!empty($ingreso->pdf_checklist) && Storage::disk('public')->exists($ingreso->pdf_checklist)) {
-                    Storage::disk('public')->delete($ingreso->pdf_checklist);
-                }
-
-                $data['pdf_checklist'] = $path;
-            }
-
+        // Si se sube una imagen para el checklist (vía request 'image')
+        // o si viene en $data['image']
+        if (request()->hasFile('image') || (isset($data['image']) && $data['image'] instanceof UploadedFile)) {
             // Al cargar el checklist el estado pasa a esperando_orden
             $data['estado'] = IngresoEstado::ESPERANDO_ORDEN;
         }
@@ -122,11 +110,6 @@ class IngresoService
         $ingreso = Ingreso::find($id);
         if (!$ingreso) {
             return null;
-        }
-
-        // Eliminar archivo de checklist si existe
-        if (!empty($ingreso->pdf_checklist) && Storage::disk('public')->exists($ingreso->pdf_checklist)) {
-            Storage::disk('public')->delete($ingreso->pdf_checklist);
         }
 
         DB::beginTransaction();

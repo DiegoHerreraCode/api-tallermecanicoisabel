@@ -605,6 +605,7 @@ class PresupuestoService
     /**
      * Actualiza automáticamente a 'rechazado' todos los presupuestos con estado 'pendiente'
      * cuya fecha de vencimiento sea menor o igual al día de hoy.
+     * Si el presupuesto es de tipo 'inicial', su ingreso asociado vuelve al estado 'esperando_orden'.
      *
      * @return int Cantidad de presupuestos actualizados.
      */
@@ -612,14 +613,42 @@ class PresupuestoService
     {
         $hoy = now()->toDateString();
 
-        // Consulta SQL Raw equivalente:
-        // UPDATE "presupuestos" SET "estado" = 'rechazado'
-        // WHERE "estado" = 'pendiente' AND "fecha_vencimiento" <= :hoy;
-        return Presupuesto::where('estado', PresupuestoEstado::PENDIENTE)
+        $presupuestosVencidos = Presupuesto::where('estado', PresupuestoEstado::PENDIENTE)
             ->whereNotNull('fecha_vencimiento')
             ->where('fecha_vencimiento', '<=', $hoy)
-            ->update([
-                'estado' => PresupuestoEstado::RECHAZADO,
+            ->get();
+
+        if ($presupuestosVencidos->isEmpty()) {
+            return 0;
+        }
+
+        DB::beginTransaction();
+
+        $idsPresupuestos = $presupuestosVencidos->pluck('id_presupuesto')->all();
+
+        // Extraer los id_ingreso de los presupuestos vencidos de tipo inicial
+        $idsIngresosParaActualizar = $presupuestosVencidos
+            ->where('tipo', PresupuestoTipo::INICIAL->value)
+            ->pluck('id_ingreso')
+            ->filter()
+            ->unique()
+            ->all();
+
+        // Actualizar los presupuestos vencidos a 'rechazado'
+        Presupuesto::whereIn('id_presupuesto', $idsPresupuestos)->update([
+            'estado' => PresupuestoEstado::RECHAZADO,
+        ]);
+
+        // Si hay ingresos de presupuestos iniciales, retornarlos al estado 'esperando_orden'
+        if (!empty($idsIngresosParaActualizar)) {
+            Ingreso::whereIn('id_ingreso', $idsIngresosParaActualizar)->update([
+                'estado' => IngresoEstado::ESPERANDO_ORDEN,
+                'last_update' => now(),
             ]);
+        }
+
+        DB::commit();
+
+        return count($idsPresupuestos);
     }
 }
