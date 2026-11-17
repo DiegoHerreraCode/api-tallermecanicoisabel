@@ -344,14 +344,13 @@
         </table>
     </div>
 
-    <!-- 3. FECHAS / TIPO ORDEN / NUM COTIZACION PADRE -->
+    <!-- 3. FECHAS / TIPO ORDEN -->
     <table class="meta-table">
         <thead>
             <tr>
-                <th style="width: 25%;">FECHA EMISI&Oacute;N</th>
-                <th style="width: 25%;">FECHA VENCIMIENTO</th>
-                <th style="width: 25%;">TIPO DE &Oacute;RDEN</th>
-                <th style="width: 25%;"># PRESUPUESTO PADRE</th>
+                <th style="width: 33.33%;">FECHA EMISI&Oacute;N</th>
+                <th style="width: 33.33%;">FECHA VENCIMIENTO</th>
+                <th style="width: 33.34%;">TIPO DE &Oacute;RDEN</th>
             </tr>
         </thead>
         <tbody>
@@ -361,9 +360,6 @@
                 <td>{{ !empty($presupuesto->fecha_vencimiento) ? \Carbon\Carbon::parse($presupuesto->fecha_vencimiento)->format("d/m/Y") : "-" }}
                 </td>
                 <td class="uppercase">{{ $tipoOrden->nombre ?? "N/A" }}</td>
-                <td class="font-bold">
-                    {{ !empty($presupuesto->num_presupuesto_padre) ? $presupuesto->num_presupuesto_padre : "-" }}
-                </td>
             </tr>
         </tbody>
     </table>
@@ -374,11 +370,10 @@
         <table class="grid-table">
             <thead>
                 <tr>
-                    <th style="width: 12%;">ID REPUESTO</th>
-                    <th style="width: 48%;">DESCRIPCI&Oacute;N</th>
-                    <th style="width: 10%;">CANT.</th>
+                    <th style="width: 55%;">DESCRIPCI&Oacute;N</th>
+                    <th style="width: 15%;">CANT.</th>
                     <th style="width: 15%;">PRECIO UNIT.</th>
-                    <th style="width: 15%;">SUBTOTAL LINEA</th>
+                    <th style="width: 15%;">TOTAL LINEA</th>
                 </tr>
             </thead>
             <tbody>
@@ -390,7 +385,6 @@
                             : "Repuesto #{$itemRep->id_repuesto}";
                     @endphp
                     <tr>
-                        <td>{{ $itemRep->id_repuesto ?? "-" }}</td>
                         <td style="text-align: left; padding-left: 8px;">{{ $descRepuesto }}</td>
                         <td class="font-bold">{{ $itemRep->cantidad }}</td>
                         <td>${{ number_format($itemRep->precio_unitario, 2, ",", ".") }}</td>
@@ -408,11 +402,10 @@
         <table class="grid-table">
             <thead>
                 <tr>
-                    <th style="width: 12%;">ID SERVICIO</th>
-                    <th style="width: 48%;">DESCRIPCI&Oacute;N SERVICIO</th>
-                    <th style="width: 10%;">CANT.</th>
+                    <th style="width: 55%;">DESCRIPCI&Oacute;N SERVICIO</th>
+                    <th style="width: 15%;">CANT.</th>
                     <th style="width: 15%;">PRECIO UNIT.</th>
-                    <th style="width: 15%;">SUBTOTAL LINEA</th>
+                    <th style="width: 15%;">TOTAL LINEA</th>
                 </tr>
             </thead>
             <tbody>
@@ -422,7 +415,6 @@
                         $descServicio = $servicioModel->nombre ?? "Servicio #{$itemServ->id_servicio_taller}";
                     @endphp
                     <tr>
-                        <td>{{ $itemServ->id_servicio_taller ?? "-" }}</td>
                         <td style="text-align: left; padding-left: 8px;">{{ $descServicio }}</td>
                         <td class="font-bold">{{ $itemServ->cantidad }}</td>
                         <td>${{ number_format($itemServ->precio_unitario, 2, ",", ".") }}</td>
