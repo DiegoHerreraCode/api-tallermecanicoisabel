@@ -42,7 +42,15 @@ class OrdenService
      */
     public static function getOne($id)
     {
-        return Orden::with(['repuestos.repuesto', 'serviciosTaller.servicioTaller', 'serviciosTaller.personal'])->find($id);
+        return Orden::with([
+            'repuestos.repuesto',
+            'serviciosTaller.servicioTaller.tipoServicioTaller',
+            'serviciosTaller.personal',
+            'tipoOrden',
+            'cliente',
+            'ingreso.hallazgosTecnicos',
+            'hallazgosTecnicos',
+        ])->find($id);
     }
 
     /**

@@ -19,6 +19,7 @@ class HallazgoTecnico extends ApiModel
 
     protected $fillable = [
         'id_orden',
+        'id_ingreso',
         'hallazgo',
         'detalle'
     ];
@@ -26,5 +27,10 @@ class HallazgoTecnico extends ApiModel
     public function orden()
     {
         return $this->belongsTo(Orden::class, 'id_orden', 'id_orden');
+    }
+
+    public function ingreso()
+    {
+        return $this->belongsTo(Ingreso::class, 'id_ingreso', 'id_ingreso');
     }
 }

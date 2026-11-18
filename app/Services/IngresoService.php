@@ -22,7 +22,7 @@ class IngresoService
      */
     public static function getAll()
     {
-        return Ingreso::get();
+        return Ingreso::with(['vehiculo', 'tipoOrden', 'hallazgosTecnicos'])->get();
     }
 
     /**
@@ -32,7 +32,7 @@ class IngresoService
      */
     public static function getOne($id)
     {
-        return Ingreso::find($id);
+        return Ingreso::with(['vehiculo', 'tipoOrden', 'hallazgosTecnicos'])->find($id);
     }
 
     /**

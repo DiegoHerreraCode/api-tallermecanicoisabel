@@ -65,4 +65,9 @@ class Ingreso extends ApiModel
     {
         return $this->hasMany(Orden::class, 'id_ingreso', 'id_ingreso');
     }
+
+    public function hallazgosTecnicos()
+    {
+        return $this->hasMany(HallazgoTecnico::class, 'id_ingreso', 'id_ingreso');
+    }
 }

@@ -15,20 +15,18 @@ use Illuminate\Http\Request;
 class HallazgoTecnicoController extends Controller
 {
     /**
-     * Retorna todas las hallazgos tecnicos registrados en el sistema.
+     * Retorna todas las hallazgos tecnicos registrados en el sistema con opción de filtrado.
      *
-     * Lógica:
-     * 1. Consulta la lista total de hallazgos tecnicos mediante HallazgoTecnicoService::getAll().
-     * 2. Devuelve respuesta JSON con status 200 y mensaje representativo.
-     *
-     * Consulta SQL ejecutada internamente vía Eloquent:
-     * -- SELECT * FROM "hallazgos_tecnicos";
-     *
+     * @param Request $request
      * @return JsonResponse Lista de hallazgos tecnicos.
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $hallazgosTecnicos = HallazgoTecnicoService::getAll();
+        $filters = [
+            'id_orden' => $request->query('id_orden'),
+            'id_ingreso' => $request->query('id_ingreso'),
+        ];
+        $hallazgosTecnicos = HallazgoTecnicoService::getAll($filters);
         return $this->successResponse(
             $hallazgosTecnicos,
             $hallazgosTecnicos->isEmpty() ? 'No se encontraron hallazgos tecnicos' : 'Hallazgos tecnicos obtenidos correctamente'
@@ -36,34 +34,31 @@ class HallazgoTecnicoController extends Controller
     }
 
     /**
-     * Registra un nuevo hallazgo tecnico.
+     * Registra un nuevo hallazgo tecnico (asociado a una orden o a un ingreso).
      *
-     * Lógica:
-     * 1. Valida que el hallazgo tecnico sea una cadena obligatoria de hasta 250 caracteres.
-     * 2. Llama a HallazgoTecnicoService::create($data) para asignar ID e insertar en la base de datos.
-     * 3. Retorna el hallazgo tecnico creado con código HTTP 201 (Created).
-     *
-     * Consultas SQL ejecutadas internamente:
-     * -- INSERT INTO "hallazgos_tecnicos" ("id_orden", "hallazgo", "detalle", "created_at", "updated_at") VALUES (...);
-     *
-     * @param Request $request Petición con el campo 'nombre'.
+     * @param Request $request
      * @return JsonResponse
      */
     public function store(Request $request): JsonResponse
     {
         $request->validate([
-            'id_orden' => 'required|integer|exists:ordenes,id_orden',
+            'id_orden' => 'nullable|integer|exists:ordenes,id_orden',
+            'id_ingreso' => 'nullable|integer|exists:ingresos,id_ingreso',
             'hallazgo' => 'required|string|max:1000',
             'detalle' => 'nullable|string|max:10000',
         ]);
+
+        if (!$request->filled('id_orden') && !$request->filled('id_ingreso')) {
+            return $this->errorResponse('Debe asociar el hallazgo a una orden o a un ingreso', 422);
+        }
 
         $data = $request->all();
 
         $hallazgoTecnico = HallazgoTecnicoService::create($data);
         if (!$hallazgoTecnico) {
-            return $this->errorResponse('Hallazgo tecnico no creado', 404);
+            return $this->errorResponse('No se pudo registrar el hallazgo técnico. Verifique que la orden o el ingreso estén activos.', 422);
         }
-        return $this->successResponse($hallazgoTecnico, 'Hallazgo tecnico creado correctamente', 201);
+        return $this->successResponse($hallazgoTecnico, 'Hallazgo técnico creado correctamente', 201);
     }
 
     /**
@@ -109,12 +104,13 @@ class HallazgoTecnicoController extends Controller
     {
         $request->validate([
             'id_orden' => 'nullable|integer|exists:ordenes,id_orden',
+            'id_ingreso' => 'nullable|integer|exists:ingresos,id_ingreso',
             'hallazgo' => 'nullable|string|max:1000',
             'detalle' => 'nullable|string|max:10000',
         ]);
 
         // Validar que al menos un campo sea modificado
-        if (!$request->has('id_orden') && !$request->has('hallazgo') && !$request->has('detalle')) {
+        if (!$request->has('id_orden') && !$request->has('id_ingreso') && !$request->has('hallazgo') && !$request->has('detalle')) {
             return $this->errorResponse('Al menos un campo debe ser modificado', 400);
         }
 
@@ -122,10 +118,10 @@ class HallazgoTecnicoController extends Controller
 
         $hallazgoTecnico = HallazgoTecnicoService::update($id, $data);
         if (!$hallazgoTecnico) {
-            return $this->errorResponse('Hallazgo tecnico no encontrado', 404);
+            return $this->errorResponse('No se pudo actualizar el hallazgo técnico', 422);
         }
 
-        return $this->successResponse($hallazgoTecnico, 'Hallazgo tecnico actualizado correctamente');
+        return $this->successResponse($hallazgoTecnico, 'Hallazgo técnico actualizado correctamente');
     }
 
     /**
