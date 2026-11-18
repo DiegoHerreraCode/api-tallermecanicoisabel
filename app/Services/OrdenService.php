@@ -29,7 +29,12 @@ class OrdenService
      */
     public static function getAll()
     {
-        return Orden::with(['repuestos.repuesto', 'serviciosTaller.servicioTaller', 'serviciosTaller.personal', 'tipoOrden'])->get();
+        return Orden::with([
+            'repuestos.repuesto',
+            'serviciosTaller.servicioTaller.tipoServicioTaller',
+            'serviciosTaller.personal',
+            'tipoOrden'
+        ])->get();
     }
 
     /**
