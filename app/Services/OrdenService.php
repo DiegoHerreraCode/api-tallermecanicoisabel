@@ -15,6 +15,7 @@ use App\Enums\OrdenEstadoAdministrativo;
 use App\Enums\OrdenServicioTallerEstado;
 use App\Enums\IngresoEstado;
 use Illuminate\Support\Facades\DB;
+use App\Services\PagoClienteService;
 use Exception;
 
 /**
@@ -50,6 +51,7 @@ class OrdenService
             'cliente',
             'ingreso.hallazgosTecnicos',
             'hallazgosTecnicos',
+            'pagos',
         ])->find($id);
     }
 
@@ -89,7 +91,7 @@ class OrdenService
         $data['estado_operativo'] = OrdenEstadoOperativo::EN_ESPERA;
         $data['estado_administrativo'] = OrdenEstadoAdministrativo::PENDIENTE_PAGO;
         $data['last_update'] = now();
-        $data['monto_pendiente'] = $data['monto_total'];
+        $data['monto_por_cobrar'] = $data['monto_total'];
 
         $orden = Orden::create($data);
 
@@ -102,6 +104,7 @@ class OrdenService
                 'precio_unitario' => $repuesto['precio_unitario'],
                 'porcentaje_ganancia' => $repuesto['porcentaje_ganancia'] ?? null,
                 'cantidad' => $repuesto['cantidad'],
+                'cantidad_cubierta_garantia' => $repuesto['cantidad_cubierta_garantia'] ?? 0,
                 'monto_total_linea_base' => $repuesto['monto_total_linea_base'] ?? null,
                 'monto_total_linea' => $repuesto['monto_total_linea'],
             ]);
@@ -122,6 +125,7 @@ class OrdenService
                 'precio_unitario' => $servicioTaller['precio_unitario'],
                 'porcentaje_ganancia' => $servicioTaller['porcentaje_ganancia'] ?? null,
                 'cantidad' => $servicioTaller['cantidad'],
+                'cantidad_cubierta_garantia' => $servicioTaller['cantidad_cubierta_garantia'] ?? 0,
                 'monto_total_linea_base' => $servicioTaller['monto_total_linea_base'] ?? null,
                 'monto_total_linea' => $servicioTaller['monto_total_linea'],
                 'estado' => $servicioTaller['estado'] ?? $estadoServicio,
@@ -129,6 +133,9 @@ class OrdenService
                 'fecha_fin' => $servicioTaller['fecha_fin'] ?? null,
             ]);
         }
+
+        // Recalcular balance inicial considerando garantías
+        PagoClienteService::recalcularBalanceOrden($orden->id_orden);
 
         // Actualizar el estado del ingreso a orden_creada
         $ingreso = Ingreso::find($orden->id_ingreso);
@@ -203,13 +210,7 @@ class OrdenService
 
         $data['last_update'] = now();
 
-        if (isset($data['monto_total'])) {
-            $data['monto_pendiente'] = $data['monto_total'];
-        }
-
-        $orden->update($data);
-
-        // Sincronización de repuestos
+        // 1. Sincronización de repuestos
         if ($hasRepuestos) {
             $payloadRepuestoIds = array_column($array_repuestos, 'id_repuesto');
 
@@ -227,6 +228,7 @@ class OrdenService
                     'precio_unitario' => $repuestoItem['precio_unitario'],
                     'porcentaje_ganancia' => $repuestoItem['porcentaje_ganancia'] ?? ($existente ? $existente->porcentaje_ganancia : null),
                     'cantidad' => $repuestoItem['cantidad'],
+                    'cantidad_cubierta_garantia' => $repuestoItem['cantidad_cubierta_garantia'] ?? ($existente ? $existente->cantidad_cubierta_garantia : 0),
                     'monto_total_linea_base' => $repuestoItem['monto_total_linea_base'] ?? ($existente ? $existente->monto_total_linea_base : null),
                     'monto_total_linea' => $repuestoItem['monto_total_linea'],
                 ];
@@ -279,6 +281,7 @@ class OrdenService
                     'precio_unitario' => $servicioItem['precio_unitario'],
                     'porcentaje_ganancia' => $servicioItem['porcentaje_ganancia'] ?? ($existente ? $existente->porcentaje_ganancia : null),
                     'cantidad' => $servicioItem['cantidad'],
+                    'cantidad_cubierta_garantia' => $servicioItem['cantidad_cubierta_garantia'] ?? ($existente ? $existente->cantidad_cubierta_garantia : 0),
                     'monto_total_linea_base' => $servicioItem['monto_total_linea_base'] ?? ($existente ? $existente->monto_total_linea_base : null),
                     'monto_total_linea' => $servicioItem['monto_total_linea'],
                     'id_personal' => $idPersonal,
@@ -308,6 +311,18 @@ class OrdenService
                 }
             }
         }
+
+        // 3. Actualizar campos escalares de la orden (sin sobreescribir montos calculados por recalcularBalanceOrden)
+        unset($data['monto_total']);
+        unset($data['monto_subtotal']);
+        unset($data['monto_iva']);
+        unset($data['monto_por_cobrar']);
+        unset($data['monto_a_favor']);
+
+        $orden->update($data);
+
+        // Recalcular balance de la orden (monto_total, monto_subtotal, monto_iva, monto_por_cobrar, monto_a_favor y estado_administrativo)
+        PagoClienteService::recalcularBalanceOrden($orden->id_orden);
 
         DB::commit();
 

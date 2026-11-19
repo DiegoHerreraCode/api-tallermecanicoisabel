@@ -25,6 +25,7 @@ class OrdenServicioTaller extends ApiModel
         'precio_unitario',
         'porcentaje_ganancia',
         'cantidad',
+        'cantidad_cubierta_garantia',
         'monto_total_linea_base',
         'monto_total_linea',
         'estado',

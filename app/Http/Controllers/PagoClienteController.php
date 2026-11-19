@@ -70,7 +70,7 @@ class PagoClienteController extends Controller
 
         $pago = PagoClienteService::create($data);
         if ($pago === false) {
-            return $this->errorResponse('Solo se permite registrar pagos cuando la orden está operativamente finalizada', 422);
+            return $this->errorResponse('Solo se permite registrar pagos a órdenes que no estén anuladas y que no estén finalizadas y pagadas simultáneamente', 422);
         }
         if (!$pago) {
             return $this->errorResponse('Pago no creado', 404);

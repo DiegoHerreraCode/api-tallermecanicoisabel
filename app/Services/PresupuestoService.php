@@ -342,7 +342,8 @@ class PresupuestoService
             'porcentaje_iva' => $presupuesto->porcentaje_iva,
             'monto_iva' => $presupuesto->monto_iva,
             'monto_total' => $presupuesto->monto_total,
-            'monto_pendiente' => $presupuesto->monto_total,
+            'monto_por_cobrar' => $presupuesto->monto_total,
+            'monto_a_favor' => 0.00,
             'last_update' => now(),
         ]);
 
@@ -488,15 +489,15 @@ class PresupuestoService
         $nuevoSubtotal = $orden->monto_subtotal + $presupuesto->monto_subtotal;
         $nuevoMontoIva = $orden->monto_iva + $presupuesto->monto_iva;
         $nuevoTotal = $orden->monto_total + $presupuesto->monto_total;
-        $nuevoPendiente = $orden->monto_pendiente + $presupuesto->monto_total;
 
         $orden->update([
             'monto_subtotal' => $nuevoSubtotal,
             'monto_iva' => $nuevoMontoIva,
             'monto_total' => $nuevoTotal,
-            'monto_pendiente' => $nuevoPendiente,
             'last_update' => now(),
         ]);
+
+        PagoClienteService::recalcularBalanceOrden($orden->id_orden);
 
         // 4. Marcar presupuesto extra como aceptado
         $presupuesto->update([
