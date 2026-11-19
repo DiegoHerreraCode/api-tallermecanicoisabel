@@ -28,6 +28,7 @@ class Ingreso extends ApiModel
         'fecha_ingreso',
         'estado',
         'observaciones_cliente',
+        'reingreso_por_falla',
         'image',
         'imagePath',
         'last_update',

@@ -34,7 +34,8 @@ class OrdenService
             'repuestos.repuesto',
             'serviciosTaller.servicioTaller.tipoServicioTaller',
             'serviciosTaller.personal',
-            'tipoOrden'
+            'tipoOrden',
+            'ingreso',
         ])->get();
     }
 

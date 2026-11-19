@@ -56,6 +56,7 @@ class IngresoController extends Controller
             'id_tipo_orden' => 'required|exists:tipos_ordenes,id_tipo_orden',
             'id_vehiculo' => 'required|exists:vehiculos,id_vehiculo',
             'observaciones_cliente' => 'nullable|string|max:10000',
+            'reingreso_por_falla' => 'nullable|boolean',
         ]);
 
         $data = $request->all();
